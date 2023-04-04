@@ -1,6 +1,6 @@
 # Factorio Circuit API
 
-This lets you control factorio constant combinators via a simple REST API amd publish circuit networks to MQTT.
+This lets you control factorio constant combinators via a simple REST API amandd publish circuit networks to MQTT.
 It is a combination of the work done by: https://github.com/DirkHeinke/factorio-constant-combinator-rest-api,
 and: https://mods.factorio.com/mod/CircuitHUD-V2. With the addition of combining the two and publishing to MQTT.
 
@@ -42,7 +42,7 @@ DELETE `/cc/:id/signal/:signalSlot` - Unset `signalSlot`
 ## MQTT
 
 Hook the new constant combinator up to a network you want to publish to MQTT. You can name the combinator, this will be used as the MQTT Topic name for that network. You can have multiple combinators to publish to multiple topics. The combinator has many useful additional features like filtering. It is a copy of: https://mods.factorio.com/mod/CircuitHUD-V2.
-The HUD display update time is also used as publishing interval (in game ticks)
+The HUD display update time is also used as publishing interval (in-game ticks)
 
 The hooked up circuit will be published as a JSON object, for example:
 

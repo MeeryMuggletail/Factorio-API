@@ -1,3 +1,5 @@
+# BEWARE: This is a first proof of concept!
+
 # Factorio Circuit API
 
 This lets you control factorio constant combinators via a simple REST API amandd publish circuit networks to MQTT.

@@ -1,0 +1,6 @@
+require "prototypes.sprite"
+require "prototypes.signals"
+require "prototypes.recipe"
+require "prototypes.buttons"
+require "prototypes.style"
+require "prototypes.hotkey"

@@ -1,5 +1,13 @@
 # BEWARE: This is a first proof of concept!
 
+## TODO
+
+- Allow use of SSL Certificates
+- Investigate if using the script-output folder is necessary or if RCON is also suited for this
+- Clean up the script-output folder on startup
+- Improve performance
+- Increase useability 
+
 # Factorio Circuit API
 
 This lets you control factorio constant combinators via a simple REST API amandd publish circuit networks to MQTT.
@@ -63,9 +71,3 @@ The hooked up circuit will be published as a JSON object, for example:
 
 ```
 
-## TODO
-
-- Allow use of SSL Certificates
-- Clean up the script-output folder on startup
-- Improve performance
-- Increase useability 

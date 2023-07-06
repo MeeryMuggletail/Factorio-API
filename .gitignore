@@ -1,0 +1,5 @@
+node_modules
+
+src/settings.ts
+.eslintrc.json
+package-lock.json

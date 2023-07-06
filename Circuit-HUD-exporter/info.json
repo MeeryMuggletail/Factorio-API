@@ -1,9 +1,0 @@
-{
-    "name": "Circuit-HUD-exporter",
-    "version": "0.1.0",
-    "title": "Circuit HUD exporter",
-    "author": "Meery",
-    "factorio_version": "1.1",
-    "dependencies": ["base >= 1.1"],
-    "description": "This mod is based on Circuit-HUD 2 V1.3 by Xiomax, including all features originaly intended. The extension is to continously export all Circuit HUD circuits to the script-output folder."
-  }

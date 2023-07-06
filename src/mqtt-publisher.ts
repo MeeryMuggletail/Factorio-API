@@ -1,42 +1,114 @@
-import fs from 'fs';
 import mqtt from 'mqtt';
 import { conf } from "./settings";
+import { pollingTargetIds, eventEmitter } from './main';
 
-function sanitizeTopic(topic: string): string {
-  // Replace any character that's not a letter, number, underscore, hyphen, or forward slash with an underscore
-  const sanitized = topic.replace(/[^A-Za-z0-9_\-/]/g, '_'); 
-  // Replace any consecutive forward slashes with a single forward slash
-  return sanitized.replace(/\/{2,}/g, '/'); 
-}
+// Initialize variables
+let pollInterval = conf.pollingSpeedmInMs;
+let pollingIntervals: { [id: number]: NodeJS.Timeout } = {};
 
-const client = mqtt.connect(conf.mqtt_address, {
+// Connect to MQTT broker
+const mqttClient = mqtt.connect(conf.mqtt_address, {
   port: conf.mqtt_port,
   username: conf.mqtt_user,
   password: conf.mqtt_password,
 });
 
-client.on('connect', () => {
-  console.log('Connected to MQTT broker');
-  var actionDone: {[index: string]:any} = {} 
-  fs.watch(conf.script_output_folder, { recursive: true }, (eventType, filename) => {
-    if (eventType === 'change') {
-      if (filename.endsWith('_mqtt.json')) {
-	var fullPath = conf.script_output_folder + filename;
-        var stats = fs.statSync(fullPath );
-        let seconds = +stats.mtime;
-        if(actionDone[filename] == seconds) return;
-        actionDone[filename] = seconds
+// Define a function to set up a polling loop for a given ID
+function setupPolling(id: number) {
+  pollingIntervals[id] = setInterval(async () => {
+    try {
+      // Fetch data from API
+      const response = await fetch(`http://localhost:8080/cc/${id}/signals`);
+      const jsonData = await response.json();
+      
+      // Publish data to MQTT broker
+      mqttClient.publish(`${id}/`, JSON.stringify(modifyJSONStructure(jsonData)));
+    } catch (error) {
+      // Handle errors
+      deletePolling(id);
+      console.error(`Error while polling URL for id ${id}:`, error);
+    }
+  }, pollInterval);
+  
+  // Log when polling starts for an ID
+  console.log(`Started polling id: ${id} - interval: ${pollInterval}ms`)
+}
 
-        const topic = `${conf.mqtt_topic_prefix}${sanitizeTopic(filename.slice(0, -10))}`;
-        const data = fs.readFileSync(fullPath).toString();
+// Define a function to reinitialize all polling instances
+function reinitializePolling() {
+  // Reset poll interval to default
+  pollInterval = conf.pollingSpeedmInMs;
+  
+  // Clear all existing polling intervals
+  Object.values(pollingIntervals).forEach((interval) => clearInterval(interval));
+  pollingIntervals = {};
 
-        console.log(`Publishing to topic ${topic}: ${data}`);
-        client.publish(topic, data);
+  // Loop over the ID array and set up polling loops for each ID
+  pollingTargetIds.forEach((id) => {
+    setupPolling(id);
+  });
+}
+
+// Define a function to delete polling for a given ID
+function deletePolling(idToDelete: number) {
+  const index = pollingTargetIds.indexOf(idToDelete);
+  if (index > -1) {
+    // Remove ID from array
+    pollingTargetIds.splice(index, 1);
+    
+    // Clear polling interval for ID
+    clearInterval(pollingIntervals[idToDelete]);
+    delete pollingIntervals[idToDelete];
+    
+    // Log when polling is deleted for an ID
+    console.log(`Deleted id: ${idToDelete}`)
+  }
+}
+
+function modifyJSONStructure (json: any): any {
+  type Signal = {
+    signalName: string;
+    signalType: string;
+    signalCount: string;
+  }
+  
+  type SignalByColor = {
+    [key: string]: {
+      [key: string]: {
+        [key: string]: string
       }
     }
+  }
+    
+  const modifiedJson: SignalByColor = {};
+  
+  Object.keys(json).forEach((color: string) => {
+    modifiedJson[color] = {};
+    json[color].forEach((signal: Signal) => {
+      modifiedJson[color][signal.signalType] = {
+        [signal.signalName]: signal.signalCount
+      }
+    });
   });
+  return modifiedJson;
+}
+
+// Loop over the initial ID array and set up polling loops for each ID
+pollingTargetIds.forEach((id) => {
+  setupPolling(id);
 });
 
-client.on('error', (err) => {
-  console.error('Error connecting to MQTT broker:', err);
+// Listen for the 'newId' event and set up a polling loop for the new ID
+eventEmitter.on('newId', (newId: number) => {
+  setupPolling(newId);
+});
+
+// Listen for the 'deleteId' event and delete polling for the specified ID
+eventEmitter.on('deleteId', (deletedId: number) => {
+  deletePolling(deletedId);
+});
+
+// Listen for the 'reinitialize' event and reinitialize all polling instances
+eventEmitter.on('reinitialize', () => {
+  reinitializePolling();
 });

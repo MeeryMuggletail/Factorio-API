@@ -1,22 +1,22 @@
-# BEWARE: This is a first proof of concept!
+# BEWARE: This is a proof of concept!
 
 ## TODO
 
 - Allow use of SSL Certificates
-- Investigate if using the script-output folder is necessary or if RCON is also suited for this
-- Clean up the script-output folder on startup
 - Improve performance
 - Increase useability 
 
 # Factorio Circuit API
 
-This lets you control factorio constant combinators via a simple REST API amandd publish circuit networks to MQTT.
+This lets you control factorio constant combinators via a simple REST API and publish circuit networks to MQTT.
 It is a combination of the work done by: https://github.com/DirkHeinke/factorio-constant-combinator-rest-api,
-and: https://mods.factorio.com/mod/CircuitHUD-V2. With the addition of combining the two and publishing to MQTT.
+and: https://mods.factorio.com/mod/CircuitHUD-V2. With the addition of combining the two and publishing to MQTT. Then after some development the CircuitHUD-V2 was removed again in favor of RCON to read the circuits
 
 ## Setup
 
-- Move the Circuit-HUD-exporter folder to your Factorio mod folder
+- Install Typescript
+  - This application is only tested with the Node.js implementation using Node.js and npm to install the required packages. In theory NuGet or Visual Studio implementations should also work but change the way to run the application.
+  - For the Node.js version, install a LTS version, for example from https://nodejs.org/en/download
 - Install a MQTT Broker like RabbitMQ
 - Enable RCON in Factorio
   - hold `Ctrl` + `Alt` and click on Settings in the Factorio menu
@@ -24,8 +24,8 @@ and: https://mods.factorio.com/mod/CircuitHUD-V2. With the addition of combining
   - set `local-rcon-socket` and `local-rcon-password`
   - start a new multiplayer game (single player has no rcon)
 - Rename `settings_sample.ts` to `settings.ts`
-- Adjust settings
-- run `npm install` and `npx ts-node-dev src/main.ts `
+- Adjust settings to reflect your passwords and configuration
+- run `npm install` and `npx ts-node-dev src/main.ts ` from the main folder
 
 ## API
 
@@ -51,8 +51,20 @@ DELETE `/cc/:id/signal/:signalSlot` - Unset `signalSlot`
 
 ## MQTT
 
-Hook the new constant combinator up to a network you want to publish to MQTT. You can name the combinator, this will be used as the MQTT Topic name for that network. You can have multiple combinators to publish to multiple topics. The combinator has many useful additional features like filtering. It is a copy of: https://mods.factorio.com/mod/CircuitHUD-V2.
-The HUD display update time is also used as publishing interval (in-game ticks)
+We can modify which constant combinators (again identified by the signal R set in slot 20 of the constant combinator) to publish to MQTT using the following API calls
+
+GET `/pollingTargetIds` - Get all circuits which are being published
+
+POST `/pollingTargetId/:id` - Adds the id to the list and returns the new list
+
+DELETE `/pollingTargetId/:id` - Removes the id from the list and returns the new list
+
+POST `/pollingSpeed/:speedMs` - Sets the new polling speed for all circuits in miliseconds
+
+POST `/reinitialize` - Resets the polling connections
+
+- It is possible to set a default polling array in the settings file using the `pollingTargetIds` property.
+- It is possible to change the default pollingSpeed in the settings file.
 
 The hooked up circuit will be published as a JSON object, for example:
 
@@ -71,3 +83,7 @@ The hooked up circuit will be published as a JSON object, for example:
 
 ```
 
+## Changelog
+
+- 2023-07-06
+  - Circuit-HUD-exporter mod removed in favor of RCON to read data
